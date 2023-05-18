@@ -1,7 +1,10 @@
-
 // The simplest possible sbt build file is just one line:
 
 scalaVersion := "2.13.8"
+
+ThisBuild / version := "0.1.0-SNAPSHOT"
+
+ThisBuild / scalaVersion := "2.13.10"
 // That is, to create a valid sbt build, all you've got to do is define the
 // version of Scala you'd like your project to use.
 
@@ -13,14 +16,13 @@ scalaVersion := "2.13.8"
 
 // It's possible to define many kinds of settings, such as:
 
-name := "hello-world"
+name := "wikipedia-scraper"
 organization := "ch.epfl.scala"
 version := "1.0"
 
 // Note, it's not required for you to define these three settings. These are
 // mostly only necessary if you intend to publish your library's binaries on a
 // place like Sonatype.
-
 
 // Want to use a published library in your project?
 // You can define other libraries as dependencies in your build like this:
@@ -64,14 +66,15 @@ libraryDependencies += "org.scala-lang.modules" %% "scala-parser-combinators" % 
 // Here's a quick glimpse of what a multi-project build looks like for this
 // build, with only one "subproject" defined, called `root`:
 
-// lazy val root = (project in file(".")).
-//   settings(
-//     inThisBuild(List(
-//       organization := "ch.epfl.scala",
-//       scalaVersion := "2.13.8"
-//     )),
-//     name := "hello-world"
-//   )
+lazy val root = (project in file("."))
+  .settings(
+    name := "scala-web-scraping",
+    libraryDependencies ++= Seq(
+      "org.jsoup" % "jsoup" % "1.15.3",
+      "net.ruippeixotog" %% "scala-scraper" % "3.0.0",
+      "org.seleniumhq.selenium" % "selenium-java" % "4.5.0"
+    )
+  )
 
 // To learn more about multi-project builds, head over to the official sbt
 // documentation at http://www.scala-sbt.org/documentation.html
