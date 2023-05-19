@@ -72,7 +72,8 @@ lazy val root = (project in file("."))
     libraryDependencies ++= Seq(
       "org.jsoup" % "jsoup" % "1.15.3",
       "net.ruippeixotog" %% "scala-scraper" % "3.0.0",
-      "org.seleniumhq.selenium" % "selenium-java" % "4.5.0"
+      "org.seleniumhq.selenium" % "selenium-java" % "4.5.0",
+      "org.scala-lang.modules" %% "scala-parallel-collections" % "1.0.4",
     )
   )
 
