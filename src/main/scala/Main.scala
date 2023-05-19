@@ -6,6 +6,10 @@ import scala.annotation.tailrec
 import scala.concurrent._
 import scala.concurrent.duration._
 import scala.concurrent.ExecutionContext.Implicits.global
+import sttp.client3._
+import sttp.model.Uri
+
+
 
 import java.io.IOException
 
@@ -127,7 +131,7 @@ object WikipediaScraper {
 
 object JsoupScraper {
 
-  def getLinks(currLink: ArticleLink): List[ArticleLink] = {
+  def getLinks2(currLink: ArticleLink): List[ArticleLink] = {
     // Wikipedia uses % to encode foreign characters in article names. Also, spaces are replaced with underscores.
     val baseArticleLinkPattern: String =
       "https://$language\\.wikipedia.org/wiki/([a-zA-Z0-9%_()]+)"
@@ -147,5 +151,33 @@ object JsoupScraper {
         ArticleLink(currLink.language, url)
       }
       .toList
+  }
+
+  def getLinks(currLink: ArticleLink): List[ArticleLink] = {
+    val time1: Long = System.currentTimeMillis()
+
+    val articleLinksPattern: Regex =
+      "/wiki/([a-zA-Z0-9%_()]+)".r
+
+    val urlWiki = s"https://${currLink.language}.wikipedia.org/wiki/${currLink.title}"
+    val backend = HttpURLConnectionBackend()
+    val request = basicRequest.get(Uri.unsafeParse(urlWiki))
+    val response = request.send(backend)
+    val document = Jsoup.parse(response.body.fold(_ => "", identity))
+
+    val time2: Long = System.currentTimeMillis()
+    println(s"TimeGet: ${time2 - time1}")
+
+    val links2 = 
+      document
+      .select("a[href]")
+      .asScala
+      .map(link => link.attr("href"))
+      .collect { case articleLinksPattern(url) =>
+        ArticleLink(currLink.language, url)
+      }
+      .toList
+
+    links2
   }
 }

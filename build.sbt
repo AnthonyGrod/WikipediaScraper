@@ -74,6 +74,7 @@ lazy val root = (project in file("."))
       "net.ruippeixotog" %% "scala-scraper" % "3.0.0",
       "org.seleniumhq.selenium" % "selenium-java" % "4.5.0",
       "org.scala-lang.modules" %% "scala-parallel-collections" % "1.0.4",
+      "com.softwaremill.sttp.client3" %% "core" % "3.3.15",
     )
   )
 
