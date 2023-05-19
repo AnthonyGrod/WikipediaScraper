@@ -1,58 +1,54 @@
 import org.jsoup._
 import scala.util.matching.Regex
 import scala.jdk.CollectionConverters._
-import scala.collection.mutable.ArrayBuffer
-import scala.collection.mutable.Buffer
+import scala.collection.immutable.Queue
+import scala.annotation.tailrec
 
 import java.io.IOException
 
-
 case class ArticleLink(language: String, title: String) {
-	override def toString: String = s"https://$language.wikipedia.org/wiki/$title"
+  override def toString: String = s"https://$language.wikipedia.org/wiki/$title"
 }
-
 
 object WikipediaScraper {
-  
-	def main(args: Array[String]): Unit = {
-		val links = JsoupScraper.getLinks(args)
-		
-    links match {
-      case Right(links) => links.foreach(println)
-      case Left(errorMessage) => println(s"Error: $errorMessage")
-    }
-	}
-}
 
+  def main(args: Array[String]): Unit = {
+    if (args.length < 2) {
+      println("Usage: JsoupScraper <languageCode> <articleName>")
+      return
+    }
+    val startArticle = ArticleLink.apply(args(0), args(1))
+		// Check if user's input is a valid Wikipedia article.
+    try {
+      val doc = Jsoup.connect(startArticle.toString).get()
+    } catch {
+      case e: IOException =>
+        println("Site does not exist.")
+        return
+    }
+
+    val links = JsoupScraper.getLinks(startArticle)
+		links.foreach(println)
+  }
+
+}
 
 object JsoupScraper {
 
-  def getLinks(args: Array[String]): Either[String, List[ArticleLink]] = {
-		// TODO: better handling of command line arguments
-		if (args.length < 2) {
-      Left("Usage: JsoupScraper <languageCode> <articleName>")
-    }
-
-		try {
-
-			val article = ArticleLink.apply(args(0), args(1))
-
-			// Wikipedia uses % to encode foreign characters in article names. Also, spaces are replaced with underscores.
-			val articleLinksPattern: Regex = s"https://${args(0)}\\.wikipedia.org/wiki/([a-zA-Z0-9%_()]+)".r
-
-			val doc = Jsoup.connect(article.toString).get()
-			val links = doc.select("a[href]")
-				.asScala
-				.map(link => link.attr("abs:href"))
-				.collect(
-					{
-						case articleLinksPattern(url) => ArticleLink.apply(args(0), url)
-					}
-				)
-				.toList
-			Right(links)
-		} catch {
-			case e: IOException => Left("Site does not exist.")
-		}
+  def getLinks(currLink: ArticleLink): List[ArticleLink] = {
+    // Wikipedia uses % to encode foreign characters in article names. Also, spaces are replaced with underscores.
+    val articleLinksPattern: Regex =
+      s"https://${currLink.language}\\.wikipedia.org/wiki/([a-zA-Z0-9%_()]+)".r
+    val doc = Jsoup.connect(currLink.toString).get()
+		doc
+			.select("a[href]")
+			.asScala
+			.map(link => link.attr("abs:href"))
+			.collect(
+				{ case articleLinksPattern(url) =>
+					ArticleLink.apply(currLink.language, url)
+				}
+			)
+			.toList
   }
 }
