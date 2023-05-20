@@ -81,7 +81,12 @@ object WikipediaScraper {
           }
           if (path.length > findShortest(result.toList.flatten) && length > 0) {
             println(s"==================Pruned==================")
-            return result
+            // Return result withuot duplicates
+            val resultWithoutDuplicates = result match {
+              case Some(list) => Some(list.distinct)
+              case None => None
+            }
+            return resultWithoutDuplicates
           }
 
           if (current == end) {
@@ -155,28 +160,6 @@ object WikipediaScraper {
 }
 
 object JsoupScraper {
-
-  def getLinks2(currLink: ArticleLink): List[ArticleLink] = {
-    // Wikipedia uses % to encode foreign characters in article names. Also, spaces are replaced with underscores.
-    val baseArticleLinkPattern: String =
-      "https://$language\\.wikipedia.org/wiki/([a-zA-Z0-9%_()]+)"
-    val articleLinksPattern: Regex =
-      baseArticleLinkPattern.replace("$language", currLink.language).r
-
-    val time1: Long = System.currentTimeMillis()
-    val doc = Jsoup.connect(currLink.toString).get()
-    val time2: Long = System.currentTimeMillis()
-    // println(s"TimeGet: ${time2 - time1}")
-
-    doc
-      .select("a[href]")
-      .asScala
-      .map(link => link.attr("abs:href"))
-      .collect { case articleLinksPattern(url) =>
-        ArticleLink(currLink.language, url)
-      }
-      .toList
-  }
 
   def getLinks(currLink: ArticleLink): List[ArticleLink] = {
     val time1: Long = System.currentTimeMillis()
