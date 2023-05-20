@@ -9,13 +9,15 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import sttp.client3._
 import sttp.model.Uri
 
-
+import java.io.PrintWriter
 
 import java.io.IOException
 
 case class ArticleLink(language: String, title: String) {
   override def toString: String = s"https://$language.wikipedia.org/wiki/$title"
 }
+
+case class ArticlePath(path: List[ArticleLink], depth: Int)
 
 object WikipediaScraper {
 
@@ -44,10 +46,20 @@ object WikipediaScraper {
     }
   }
 
+  def findShortest(paths: List[ArticlePath]): Int = {
+    if (paths.isEmpty) {
+      0
+    } else {
+      // return depth of the first element on the list
+      paths.head.depth
+    }
+
+  }
+
   def findShortestPath(
       start: ArticleLink,
       end: ArticleLink
-  ): Option[List[ArticleLink]] = {
+  ): Option[List[ArticlePath]] = {
     var timeTotal: Long = 0L
 
     @tailrec
@@ -55,21 +67,35 @@ object WikipediaScraper {
         queue: Queue[List[ArticleLink]],
         visited: Set[ArticleLink],
         requestsCount: Int,
-        lastRequestTime: Long
-    ): Option[List[ArticleLink]] = {
+        lastRequestTime: Long,
+        result: Option[List[ArticlePath]]
+    ): Option[List[ArticlePath]] = {
       queue.dequeueOption match {
         case Some((path, remainingQueue)) =>
           val current = path.head
+          println(s"currentLength: ${path.length}")
+          println(s"path: $path")
+          val length: Int = result match {
+            case Some(list) => list.length
+            case None => 0
+          }
+          if (path.length > findShortest(result.toList.flatten) && length > 0) {
+            println(s"==================Pruned==================")
+            return result
+          }
 
           if (current == end) {
-            Some(path.reverse)
+            println(s"==================Found==================")
+            println(s"path: ${path}")
+            new PrintWriter("output.txt") { write(s"${path}"); close }
+            // Append to result
+            val updatedResult = result match {
+              case Some(paths) => Some(List(ArticlePath(path, path.length)) ++ paths)
+              case None        => Some(List(ArticlePath(path, path.length)))
+            }
+            findShortestPathRec(remainingQueue, visited, requestsCount, lastRequestTime, updatedResult)
           } else if (visited.contains(current)) {
-            findShortestPathRec(
-              remainingQueue,
-              visited,
-              requestsCount,
-              lastRequestTime
-            )
+            findShortestPathRec(remainingQueue, visited, requestsCount, lastRequestTime, result)
           } else {
             val time1: Long = System.currentTimeMillis()
 
@@ -87,10 +113,10 @@ object WikipediaScraper {
                 val time2: Long = System.currentTimeMillis()
                 val resTime: Long = time2 - time1
                 timeTotal += resTime
-                println(s"Time: ${time2 - time1}")
-                println(s"Time total: $timeTotal")
-                println(s"Current: $current")
-                println(s"requestsCount: $requestsCount")
+                // println(s"Time: ${time2 - time1}")
+                // println(s"Time total: $timeTotal")
+                // println(s"Current: $current")
+                // println(s"requestsCount: $requestsCount")
                 val updatedQueue =
                   remainingQueue.enqueueAll(links.map(link => link :: path))
 
@@ -98,6 +124,9 @@ object WikipediaScraper {
                 val currentTime = System.currentTimeMillis()
                 val elapsedMillis = currentTime - lastRequestTime
                 val delayMillis = 1000 / 200 // 200 requests per second
+                if (elapsedMillis < delayMillis && requestsCount >= 200) {
+                  println("==============Sleeping================")
+                }
                 val updatedRequestsCount =
                   if (elapsedMillis < delayMillis && requestsCount >= 200) {
                     Thread.sleep(delayMillis - elapsedMillis)
@@ -106,12 +135,7 @@ object WikipediaScraper {
                     requestsCount + 1
                   }
 
-                findShortestPathRec(
-                  updatedQueue,
-                  visited + current,
-                  updatedRequestsCount,
-                  currentTime
-                )
+                findShortestPathRec(updatedQueue, visited + current, updatedRequestsCount, currentTime, result)
             }
           }
 
@@ -123,7 +147,8 @@ object WikipediaScraper {
       Queue(List(start)),
       Set.empty,
       0,
-      System.currentTimeMillis()
+      System.currentTimeMillis(),
+      Some(List.empty)
     )
   }
 
@@ -141,7 +166,7 @@ object JsoupScraper {
     val time1: Long = System.currentTimeMillis()
     val doc = Jsoup.connect(currLink.toString).get()
     val time2: Long = System.currentTimeMillis()
-    println(s"TimeGet: ${time2 - time1}")
+    // println(s"TimeGet: ${time2 - time1}")
 
     doc
       .select("a[href]")
@@ -166,10 +191,9 @@ object JsoupScraper {
     val document = Jsoup.parse(response.body.fold(_ => "", identity))
 
     val time2: Long = System.currentTimeMillis()
-    println(s"TimeGet: ${time2 - time1}")
+    // println(s"TimeGet: ${time2 - time1}")
 
-    val links2 = 
-      document
+    document
       .select("a[href]")
       .asScala
       .map(link => link.attr("href"))
@@ -177,7 +201,5 @@ object JsoupScraper {
         ArticleLink(currLink.language, url)
       }
       .toList
-
-    links2
   }
 }
