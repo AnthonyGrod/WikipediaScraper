@@ -6,10 +6,12 @@ import scala.annotation.tailrec
 import scala.concurrent._
 import scala.concurrent.duration._
 import scala.concurrent.ExecutionContext.Implicits.global
+import scala.io.Source
+import scala.util.{Try, Success, Failure}
 import sttp.client3._
-import sttp.model.Uri
+import sttp.model.{Uri, StatusCode}
 
-import java.io.PrintWriter
+import java.io.{PrintWriter, File}
 
 import java.io.IOException
 
@@ -22,27 +24,77 @@ case class ArticlePath(path: List[ArticleLink], depth: Int)
 object WikipediaScraper {
 
   def main(args: Array[String]): Unit = {
-    if (args.length < 4) {
-      println(
-        "Usage: JsoupScraper <languageCodeStart> <articleNameStart> <languageCodeEnd> <articleNameEnd"
-      )
-      return
-    }
-    val startArticle = ArticleLink(args(0), args(1))
-    val endArticle = ArticleLink(args(2), args(3))
-    // Check if user's input is a valid Wikipedia article.
-    try {
-      val doc = Jsoup.connect(startArticle.toString).get()
-    } catch {
-      case e: IOException =>
-        println("Site does not exist.")
+    args.length match {
+      case 2 =>
+        val searchQueries = readFile(args(0))
+        if (searchQueries.isEmpty) {
+          println("Invalid file content. File must contain non empty rows of tuples of the form (language, articleNameStart, articleNameEnd). Each ending with new line.")
+          return
+        }
+        println("Success")
+        println(s"searchQueries: ${searchQueries.get}")
+        val searchResults = searchQueries.get.map {
+          case List(start, end) =>
+            val shortestPath = findShortestPath(start, end)
+            shortestPath match {
+              case Some(path) => path
+              case None       => List.empty
+            }
+          case _ => List.empty // Should never happen since we check it but we just do not want to get warnings(;
+        }
+        // Making sure that the output file is empty (so if there's any data in it, it's overwritten)
+        val outputFile = new File(args(1))
+        val pw = new PrintWriter(outputFile)
+        searchResults.foreach { result =>
+          println(result.mkString("\n"))
+          pw.write(result.mkString("\n"))
+          pw.write("\n")
+        }
+        pw.flush()
+        pw.close()
+        return
+      case _ =>
+        println("Usage: run <absolutePathToInputFile> <absolutePathToOutputFile>")
         return
     }
+  }
 
-    val shortestPath = findShortestPath(startArticle, endArticle)
-    shortestPath match {
-      case Some(path) => path.foreach(println)
-      case None       => println("No path found.")
+  def checkIfLinkExists(link: ArticleLink): Boolean = {
+    val urlWiki = s"https://${link.language}.wikipedia.org/wiki/${link.title}"
+    val backend = HttpURLConnectionBackend()
+    val request = basicRequest.get(Uri.unsafeParse(urlWiki))
+    val response = request.send(backend)
+    response.code == StatusCode.Ok
+  }
+
+  def readFile(filename: String): Option[List[List[ArticleLink]]] = {
+    val bufferedSource: Try[Source] = Try(Source.fromFile(filename))
+    bufferedSource match {
+      case Success(source) =>
+        // TODO: Check if file is empty and TRANSLATE TO UTF8 ALL POLISH CHARACTERS
+        if (source.isEmpty) {
+          return None
+        }
+        val lines = (for (line <- source.getLines()) yield line).toList
+        val validLine: Regex = """\(([a-z]+), ([a-zA-Z0-9%_()]+), ([a-zA-Z0-9%_()]+)\)\n?""".r
+        val searchQueries: List[List[ArticleLink]] = lines.flatMap {
+          case validLine(lang, srcName, destName) =>
+            // check if all links exist
+            if (!checkIfLinkExists(ArticleLink(lang, srcName)) || !checkIfLinkExists(ArticleLink(lang, destName))) {
+              println(s"Invalid tuple: $lang, $srcName, $destName. One of the links does not exist.")
+              return None
+            }
+            Some(List(ArticleLink(lang, srcName), ArticleLink(lang, destName)))
+          case _ =>
+            source.close()
+            return None
+        }
+
+        source.close()
+        Some(searchQueries)
+      case Failure(exception) =>
+        println(s"Error opening file: ${exception.getMessage}")
+        None
     }
   }
 
@@ -92,7 +144,6 @@ object WikipediaScraper {
           if (current == end) {
             println(s"==================Found==================")
             println(s"path: ${path}")
-            new PrintWriter("output.txt") { write(s"${path}"); close }
             // Append to result
             val updatedResult = result match {
               case Some(paths) => Some(List(ArticlePath(path, path.length)) ++ paths)
@@ -118,10 +169,6 @@ object WikipediaScraper {
                 val time2: Long = System.currentTimeMillis()
                 val resTime: Long = time2 - time1
                 timeTotal += resTime
-                // println(s"Time: ${time2 - time1}")
-                // println(s"Time total: $timeTotal")
-                // println(s"Current: $current")
-                // println(s"requestsCount: $requestsCount")
                 val updatedQueue =
                   remainingQueue.enqueueAll(links.map(link => link :: path))
 
@@ -164,8 +211,7 @@ object JsoupScraper {
   def getLinks(currLink: ArticleLink): List[ArticleLink] = {
     val time1: Long = System.currentTimeMillis()
 
-    val articleLinksPattern: Regex =
-      "/wiki/([a-zA-Z0-9%_()]+)".r
+    val articleLinksPattern: Regex = "/wiki/([a-zA-Z0-9%_()]+)".r
 
     val urlWiki = s"https://${currLink.language}.wikipedia.org/wiki/${currLink.title}"
     val backend = HttpURLConnectionBackend()
@@ -174,7 +220,7 @@ object JsoupScraper {
     val document = Jsoup.parse(response.body.fold(_ => "", identity))
 
     val time2: Long = System.currentTimeMillis()
-    // println(s"TimeGet: ${time2 - time1}")
+    println(s"TimeGet: ${time2 - time1}")
 
     document
       .select("a[href]")
