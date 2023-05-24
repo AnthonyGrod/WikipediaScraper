@@ -33,9 +33,9 @@ In order for this project to work you need to have:
 2. Once ``sbt`` is up and running, inside ``sbt`` run ``compile``. This will automatically create necessary dependencies, compile files and link them.
 3. Now you just have to run the project. For details, please look below.
 
-### Where to run
+### Where To Run
 
-During developement of this program on my machine locally I noticed the most time consuming operation is by far fetching HTML data (each fetch was minimum 50ms, even with almost-empty sites). I noticed that on GiHub Codespace HTML fetch time is on sometimes even 10x lower. I am assuming then that the problem was caused by my local machine configuration but if you face it too, I recommend using something like GitHub Codespace in order to boost efficiency.
+During developement of this program on my machine locally I noticed the most time consuming operation is by far fetching HTML data (each fetch was minimum 50ms, even with almost-empty sites). I noticed that on GiHub Codespace HTML fetch time is sometimes even 10x lower. I am assuming then that the problem was caused by my local machine configuration but if you face it too, I recommend using something like GitHub Codespace in order to boost efficiency.
 
 TL;DR If on your local machine automatic tests run longer than 10s, I recommend running the program on something like GitHub Codespace.
 
