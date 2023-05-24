@@ -82,8 +82,6 @@ object WikipediaScraper {
           } else if (visited.contains(current)) {
             findShortestPathRec(remainingQueue, visited, requestsCount, lastRequestTime, result)
           } else {
-            val time1: Long = System.currentTimeMillis()
-
             val promise = Promise[List[ArticleLink]]()
             val future = promise.future
 
@@ -95,9 +93,6 @@ object WikipediaScraper {
 
             Await.result(future, Duration.Inf) match {
               case links =>
-                val time2: Long = System.currentTimeMillis()
-                val resTime: Long = time2 - time1
-                timeTotal += resTime
                 val updatedQueue =
                   remainingQueue.enqueueAll(links.map(link => link :: path))
 
@@ -106,6 +101,7 @@ object WikipediaScraper {
                 val elapsedMillis = currentTime - lastRequestTime
                 val delayMillis = 1000 / 200 // 200 requests per second
                 val updatedRequestsCount =
+                  // make sure that we don't surpass Wikipedia rate limit
                   if (elapsedMillis < delayMillis && requestsCount >= 200) {
                     Thread.sleep(delayMillis - elapsedMillis)
                     1
