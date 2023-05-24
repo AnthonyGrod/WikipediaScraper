@@ -32,8 +32,6 @@ object WikipediaScraper {
           println("Invalid file content. File must contain non empty rows of tuples of the form (language, articleNameStart, articleNameEnd). Each ending with new line.")
           return
         }
-        println("Success")
-        println(s"searchQueries: ${searchQueries.get}")
         val searchResults = searchQueries.get.map {
           case List(start, end) =>
             val shortestPath = findShortestPath(start, end)
@@ -47,9 +45,9 @@ object WikipediaScraper {
         val outputFile = new File(args(1))
         val pw = new PrintWriter(outputFile)
         searchResults.foreach { result =>
-          println(result.mkString("\n"))
-          pw.write(result.mkString("\n"))
-          pw.write("\n")
+          val reversedPaths = result.map(path => path.path.reverse.map(_.toString.stripPrefix("https://pl.wikipedia.org/wiki/")).mkString(", "))
+          val line = reversedPaths.mkString("), (")
+          pw.write(s"($line)\n")
         }
         pw.flush()
         pw.close()
@@ -95,10 +93,8 @@ object WikipediaScraper {
               println(s"Invalid tuple: $lang, $srcName, $destName. One of the links does not exist.")
               return None
             }
-            println("Good")
             Some(List(ArticleLink(lang, encodeAlphanumericOnly(srcName)), ArticleLink(lang, encodeAlphanumericOnly(destName))))
           case _ =>
-            println("Bad")
             source.close()
             return None
         }
@@ -126,8 +122,6 @@ object WikipediaScraper {
       end: ArticleLink
   ): Option[List[ArticlePath]] = {
     var timeTotal: Long = 0L
-    println(s"end.title: ${end.title}")
-    println(s"end: $end")
 
     @tailrec
     def findShortestPathRec(
@@ -156,9 +150,6 @@ object WikipediaScraper {
             return resultWithoutDuplicates
           }
 
-          println("comparing current and end")
-          println(s"current.title: ${current.title}")
-          println(s"end.title: ${end.title}")
           if (current == end) {
             println(s"==================Found==================")
             println(s"path: ${path}")
