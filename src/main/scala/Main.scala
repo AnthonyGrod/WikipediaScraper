@@ -1,20 +1,17 @@
-import org.jsoup.Jsoup
-import scala.util.matching.Regex
-import scala.jdk.CollectionConverters._
-import scala.collection.immutable.Queue
 import scala.annotation.tailrec
-import scala.concurrent._
+import scala.concurrent.{Future, Await, Promise}
 import scala.concurrent.duration._
 import scala.concurrent.ExecutionContext.Implicits.global
-import scala.io.Source
 import scala.util.{Try, Success, Failure}
+import scala.util.matching.Regex
+import scala.io.Source
+import scala.collection.immutable.Queue
+
 import sttp.client3._
 import sttp.model.{Uri, StatusCode}
 
 import java.io.{PrintWriter, File}
 import java.net.{URLDecoder, URLEncoder}
-
-import java.io.IOException
 
 case class ArticleLink(language: String, title: String) {
   override def toString: String = s"https://$language.wikipedia.org/wiki/${URLDecoder.decode(title, "UTF-8")}"
@@ -42,24 +39,9 @@ object WikipediaScraper {
             }
           case _ => List.empty // Should never happen since we check it but we just do not want to get warnings(;
         }
-        // Making sure that the output file is empty (so if there's any data in it, it's overwritten)
-        val outputFile = new File(args(1))
-        val pw = new PrintWriter(outputFile)
-        searchResults.foreach { result =>
-          val sortedPaths = result.sortBy(_.path.map(_.decodedTitle).mkString(", "))
-          val line = sortedPaths.map { path =>
-            val strippedLinks = path.path.reverse.map(_.decodedTitle)
-            strippedLinks.mkString(", ")
-          }.mkString("), (")
-
-          pw.write(s"($line)\n")
-        }
-        pw.flush()
-        pw.close()
-        return
+        writeIntoFile(args(1), searchResults)
       case _ =>
         println("Usage: run <absolutePathToInputFile> <absolutePathToOutputFile>")
-        return
     }
   }
 
@@ -110,6 +92,22 @@ object WikipediaScraper {
         println(s"Error opening file: ${exception.getMessage}")
         None
     }
+  }
+
+  def writeIntoFile(filePath: String, output: List[List[ArticlePath]]): Unit = {
+    val outputFile = new File(filePath)
+    val pw = new PrintWriter(outputFile)
+    output.foreach { result =>
+      val sortedPaths = result.sortBy(_.path.map(_.decodedTitle).mkString(", "))
+      val line = sortedPaths.map { path =>
+        val strippedLinks = path.path.reverse.map(_.decodedTitle)
+        strippedLinks.mkString(", ")
+      }.mkString("), (")
+
+      pw.write(s"($line)\n")
+    }
+    pw.flush()
+    pw.close()
   }
 
   def findShortest(paths: List[ArticlePath]): Int = {
@@ -219,31 +217,4 @@ object WikipediaScraper {
     )
   }
 
-}
-
-class JsoupScraper {
-
-  def getLinks(currLink: ArticleLink): List[ArticleLink] = {
-    val time1: Long = System.currentTimeMillis()
-
-    val articleLinksPattern: Regex = "/wiki/([a-zA-Z0-9%_()]+)".r
-
-    val urlWiki = s"https://${currLink.language}.wikipedia.org/wiki/${currLink.title}"
-    val backend = HttpURLConnectionBackend()
-    val request = basicRequest.get(Uri.unsafeParse(urlWiki))
-    val response = request.send(backend)
-    val document = Jsoup.parse(response.body.fold(_ => "", identity))
-
-    val time2: Long = System.currentTimeMillis()
-    println(s"TimeGet: ${time2 - time1}")
-
-    document
-      .select("a[href]")
-      .asScala
-      .map(link => link.attr("href"))
-      .collect { case articleLinksPattern(url) =>
-        ArticleLink(currLink.language, url)
-      }
-      .toList
-  }
 }
