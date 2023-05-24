@@ -1,11 +1,5 @@
 # Wikipedia Scraper
 
-### Disclaimer
-
-During developement of this program on my machine locally I noticed the most time consuming operation is by far fetching HTML data (each fetch was minimum 50ms, even with almost-empty sites). After trying to solve this problem with introducing concurrent HTML fetching I noticed that on GiHub Codespace HTML fetch time is on avarage even 10x lower, being close to the rate limit of Wikipedia. I am assuming then that the problem was caused by my local machine configuration but if you face it too, I recommend using something like GitHub Codespace in order to boost efficiency.
-
-TL;DR If on your local machine automatic tests run longer than 10s, I recommend running the program on something like GitHub Codespace.
-
 ### Overview
 
 This project implements an algorithm which for two given articles finds all shortest paths between them.
@@ -25,6 +19,12 @@ and a list of results (paths found) are passed. For a given article link taken f
    and continue the search.
 
 The search begins with only starting article on the queue.
+
+### About running
+
+During developement of this program on my machine locally I noticed the most time consuming operation is by far fetching HTML data (each fetch was minimum 50ms, even with almost-empty sites). After trying to solve this problem with introducing concurrent HTML fetching I noticed that on GiHub Codespace HTML fetch time is on avarage even 10x lower, being close to the rate limit of Wikipedia. I am assuming then that the problem was caused by my local machine configuration but if you face it too, I recommend using something like GitHub Codespace in order to boost efficiency.
+
+TL;DR If on your local machine automatic tests run longer than 10s, I recommend running the program on something like GitHub Codespace.
 
 ### Requirements
 
