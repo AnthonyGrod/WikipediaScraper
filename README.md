@@ -13,7 +13,7 @@ and a list of results (paths found) are passed. For a given article link taken f
 
 1. If results is not empty and length of the path we're currently processing is greater than length of the path in results.
    If both conditions are met, we stop the search since all shortest paths have been found.
-2. If it has been visited. If so, we just call the recursive function passing the queue without the link.
+2. If it has been visited. If so, we just call the recursive function passing the queue without its first element.
 3. If it is the endpoint we're looking for. If so, we add it to the results list and go on.
 4. In other case we read all Wikipedia links inside given article and enqueue them with their path from the starting article
    and continue the search.
@@ -35,7 +35,7 @@ In order for this project to work you need to have:
 
 ### Where To Run
 
-During developement of this program on my machine locally I noticed the most time consuming operation is by far fetching HTML data (each fetch was minimum 50ms, even with almost-empty sites). I noticed that on GiHub Codespace HTML fetch time is sometimes even 10x lower. I am assuming then that the problem was caused by my local machine configuration but if you face it too, I recommend using something like GitHub Codespace in order to boost efficiency.
+During developement of this program on my machine locally I noticed the most time consuming operation is by far fetching HTML data (each fetch was minimum 50ms, even with almost-empty sites). I noticed that on GiHub Codespace HTML fetch time is sometimes even 10x lower. I am assuming then that the problem was caused by my local machine configuration but if you face it too, I recommend using something like GitHub Codespace in order to boost the efficiency.
 
 TL;DR If on your local machine automatic tests run longer than 10s, I recommend running the program on something like GitHub Codespace.
 
@@ -79,8 +79,9 @@ In case of an incorrect input an appropriate message will be shown.
 ### Output
 
 As an output the program created or overrides ``.txt`` file at location provided by
-``absoluteOutputPath`` argument in ``run`` command. In this file the program will
-put all shortest paths for each line of input sorted alphabetically into output file.
+``absoluteOutputPath`` argument in ``run`` command. In this file the program for each
+```(langCode, srcName, destName)``` will put into output file a separate line with all
+shortest paths found, separated by comma and space and sorted alphabetically.
 
 ### Testing
 
