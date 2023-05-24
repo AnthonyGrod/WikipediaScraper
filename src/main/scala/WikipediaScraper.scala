@@ -82,35 +82,25 @@ object WikipediaScraper {
           } else if (visited.contains(current)) {
             findShortestPathRec(remainingQueue, visited, requestsCount, lastRequestTime, result)
           } else {
-            val promise = Promise[List[ArticleLink]]()
-            val future = promise.future
+            val links = linksScraper.getLinks(current).filterNot(visited.contains)
 
-            Future {
-              val links =
-                linksScraper.getLinks(current).filterNot(visited.contains)
-              promise.success(links)
-            }
+            val updatedQueue =
+              remainingQueue.enqueueAll(links.map(link => link :: path))
 
-            Await.result(future, Duration.Inf) match {
-              case links =>
-                val updatedQueue =
-                  remainingQueue.enqueueAll(links.map(link => link :: path))
+            // Check if the maximum number of requests per second has been reached
+            val currentTime = System.currentTimeMillis()
+            val elapsedMillis = currentTime - lastRequestTime
+            val delayMillis = 1000 / 200 // 200 requests per second
+            val updatedRequestsCount =
+              // make sure that we don't surpass Wikipedia rate limit
+              if (elapsedMillis < delayMillis && requestsCount >= 200) {
+                Thread.sleep(delayMillis - elapsedMillis)
+                1
+              } else {
+                requestsCount + 1
+              }
 
-                // Check if the maximum number of requests per second has been reached
-                val currentTime = System.currentTimeMillis()
-                val elapsedMillis = currentTime - lastRequestTime
-                val delayMillis = 1000 / 200 // 200 requests per second
-                val updatedRequestsCount =
-                  // make sure that we don't surpass Wikipedia rate limit
-                  if (elapsedMillis < delayMillis && requestsCount >= 200) {
-                    Thread.sleep(delayMillis - elapsedMillis)
-                    1
-                  } else {
-                    requestsCount + 1
-                  }
-
-                findShortestPathRec(updatedQueue, visited + current, updatedRequestsCount, currentTime, result)
-            }
+            findShortestPathRec(updatedQueue, visited + current, updatedRequestsCount, currentTime, result)
           }
 
         case None => None
