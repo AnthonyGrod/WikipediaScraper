@@ -12,11 +12,12 @@ import sttp.client3._
 import sttp.model.{Uri, StatusCode}
 
 import java.io.{PrintWriter, File}
+import java.net.{URLDecoder, URLEncoder}
 
 import java.io.IOException
 
 case class ArticleLink(language: String, title: String) {
-  override def toString: String = s"https://$language.wikipedia.org/wiki/$title"
+  override def toString: String = s"https://$language.wikipedia.org/wiki/${URLDecoder.decode(title, "UTF-8")}"
 }
 
 case class ArticlePath(path: List[ArticleLink], depth: Int)
@@ -67,6 +68,16 @@ object WikipediaScraper {
     response.code == StatusCode.Ok
   }
 
+  def encodeAlphanumericOnly(str: String): String = {
+    val alphanumericPattern = "[\\p{Alnum}\\p{L}]+".r
+
+    val encodedParts = alphanumericPattern.replaceAllIn(str, { m =>
+      URLEncoder.encode(m.group(0), "UTF-8")
+    })
+
+    encodedParts
+  } 
+
   def readFile(filename: String): Option[List[List[ArticleLink]]] = {
     val bufferedSource: Try[Source] = Try(Source.fromFile(filename))
     bufferedSource match {
@@ -76,7 +87,7 @@ object WikipediaScraper {
           return None
         }
         val lines = (for (line <- source.getLines()) yield line).toList
-        val validLine: Regex = """\(([a-z]+), ([a-zA-Z0-9%_()]+), ([a-zA-Z0-9%_()]+)\)\n?""".r
+        val validLine: Regex = """\(([a-z]+), ([\p{L}0-9%_()]+), ([\p{L}0-9%_()]+)\)\n?""".r
         val searchQueries: List[List[ArticleLink]] = lines.flatMap {
           case validLine(lang, srcName, destName) =>
             // check if all links exist
@@ -84,8 +95,10 @@ object WikipediaScraper {
               println(s"Invalid tuple: $lang, $srcName, $destName. One of the links does not exist.")
               return None
             }
-            Some(List(ArticleLink(lang, srcName), ArticleLink(lang, destName)))
+            println("Good")
+            Some(List(ArticleLink(lang, encodeAlphanumericOnly(srcName)), ArticleLink(lang, encodeAlphanumericOnly(destName))))
           case _ =>
+            println("Bad")
             source.close()
             return None
         }
@@ -113,6 +126,8 @@ object WikipediaScraper {
       end: ArticleLink
   ): Option[List[ArticlePath]] = {
     var timeTotal: Long = 0L
+    println(s"end.title: ${end.title}")
+    println(s"end: $end")
 
     @tailrec
     def findShortestPathRec(
@@ -141,6 +156,9 @@ object WikipediaScraper {
             return resultWithoutDuplicates
           }
 
+          println("comparing current and end")
+          println(s"current.title: ${current.title}")
+          println(s"end.title: ${end.title}")
           if (current == end) {
             println(s"==================Found==================")
             println(s"path: ${path}")

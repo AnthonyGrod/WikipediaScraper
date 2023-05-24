@@ -2,8 +2,6 @@
 
 scalaVersion := "2.13.8"
 
-ThisBuild / version := "0.1.0-SNAPSHOT"
-
 ThisBuild / scalaVersion := "2.13.10"
 // That is, to create a valid sbt build, all you've got to do is define the
 // version of Scala you'd like your project to use.
