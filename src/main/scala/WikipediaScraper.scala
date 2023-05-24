@@ -142,7 +142,7 @@ object WikipediaScraper {
     )
   }
 
-    def checkIfLinkExists(link: ArticleLink): Boolean = {
+  def checkIfLinkExists(link: ArticleLink): Boolean = {
     val urlWiki = s"https://${link.language}.wikipedia.org/wiki/${link.title}"
     val backend = HttpURLConnectionBackend()
     val request = basicRequest.get(Uri.unsafeParse(urlWiki))
