@@ -1,0 +1,1 @@
+(Skala_betów, Funkcja_kardynalna, Zbiór), (Skala_betów, Hipoteza_continuum, Zbiór), (Skala_betów, Klasa_(matematyka), Zbiór), (Skala_betów, Liczby_rzeczywiste, Zbiór), (Skala_betów, Moc_zbioru, Zbiór), (Skala_betów, Podzbiór, Zbiór)

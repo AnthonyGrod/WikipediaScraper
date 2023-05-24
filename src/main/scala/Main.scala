@@ -127,6 +127,7 @@ object WikipediaScraper {
       end: ArticleLink
   ): Option[List[ArticlePath]] = {
     var timeTotal: Long = 0L
+    val linksScraper = new JsoupScraper()
 
     @tailrec
     def findShortestPathRec(
@@ -174,7 +175,7 @@ object WikipediaScraper {
 
             Future {
               val links =
-                JsoupScraper.getLinks(current).filterNot(visited.contains)
+                linksScraper.getLinks(current).filterNot(visited.contains)
               promise.success(links)
             }
 
@@ -220,7 +221,7 @@ object WikipediaScraper {
 
 }
 
-object JsoupScraper {
+class JsoupScraper {
 
   def getLinks(currLink: ArticleLink): List[ArticleLink] = {
     val time1: Long = System.currentTimeMillis()

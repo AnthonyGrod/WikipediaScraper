@@ -1,0 +1,2 @@
+(Element_neutralny, Grupa_(matematyka))
+(Quotient_by_an_equivalence_relation, Equivalence_relation)

@@ -1,0 +1,2 @@
+(pl, Element_neutralny, Grupa_(matematyka))
+(en, Quotient_by_an_equivalence_relation, Equivalence_relation)
