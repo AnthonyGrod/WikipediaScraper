@@ -13,10 +13,8 @@ class JsoupScraper {
 
     val articleLinksPattern: Regex = "/wiki/([a-zA-Z0-9%_()]+)".r
 
-    val urlWiki = s"https://${currLink.language}.wikipedia.org/wiki/${currLink.title}"
-    val backend = HttpURLConnectionBackend()
-    val request = basicRequest.get(Uri.unsafeParse(urlWiki))
-    val response = request.send(backend)
+    val request = basicRequest.get(Uri.unsafeParse(s"https://${currLink.language}.wikipedia.org/wiki/${currLink.title}"))
+    val response = request.send(HttpURLConnectionBackend())
     val document = Jsoup.parse(response.body.fold(_ => "", identity))
 
     val time2: Long = System.currentTimeMillis()
