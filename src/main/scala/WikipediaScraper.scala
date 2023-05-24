@@ -45,81 +45,6 @@ object WikipediaScraper {
     }
   }
 
-  def checkIfLinkExists(link: ArticleLink): Boolean = {
-    val urlWiki = s"https://${link.language}.wikipedia.org/wiki/${link.title}"
-    val backend = HttpURLConnectionBackend()
-    val request = basicRequest.get(Uri.unsafeParse(urlWiki))
-    val response = request.send(backend)
-    response.code == StatusCode.Ok
-  }
-
-  def encodeAlphanumericOnly(str: String): String = {
-    val alphanumericPattern = "[\\p{Alnum}\\p{L}]+".r
-
-    val encodedParts = alphanumericPattern.replaceAllIn(str, { m =>
-      URLEncoder.encode(m.group(0), "UTF-8")
-    })
-
-    encodedParts
-  } 
-
-  def readFile(filename: String): Option[List[List[ArticleLink]]] = {
-    val bufferedSource: Try[Source] = Try(Source.fromFile(filename))
-    bufferedSource match {
-      case Success(source) =>
-        // TODO: Check if file is empty and TRANSLATE TO UTF8 ALL POLISH CHARACTERS
-        if (source.isEmpty) {
-          return None
-        }
-        val lines = (for (line <- source.getLines()) yield line).toList
-        val validLine: Regex = """\(([a-z]+), ([\p{L}0-9%_()]+), ([\p{L}0-9%_()]+)\)\n?""".r
-        val searchQueries: List[List[ArticleLink]] = lines.flatMap {
-          case validLine(lang, srcName, destName) =>
-            // check if all links exist
-            if (!checkIfLinkExists(ArticleLink(lang, srcName)) || !checkIfLinkExists(ArticleLink(lang, destName))) {
-              println(s"Invalid tuple: $lang, $srcName, $destName. One of the links does not exist.")
-              return None
-            }
-            Some(List(ArticleLink(lang, encodeAlphanumericOnly(srcName)), ArticleLink(lang, encodeAlphanumericOnly(destName))))
-          case _ =>
-            source.close()
-            return None
-        }
-
-        source.close()
-        Some(searchQueries)
-      case Failure(exception) =>
-        println(s"Error opening file: ${exception.getMessage}")
-        None
-    }
-  }
-
-  def writeIntoFile(filePath: String, output: List[List[ArticlePath]]): Unit = {
-    val outputFile = new File(filePath)
-    val pw = new PrintWriter(outputFile)
-    output.foreach { result =>
-      val sortedPaths = result.sortBy(_.path.map(_.decodedTitle).mkString(", "))
-      val line = sortedPaths.map { path =>
-        val strippedLinks = path.path.reverse.map(_.decodedTitle)
-        strippedLinks.mkString(", ")
-      }.mkString("), (")
-
-      pw.write(s"($line)\n")
-    }
-    pw.flush()
-    pw.close()
-  }
-
-  def findShortest(paths: List[ArticlePath]): Int = {
-    if (paths.isEmpty) {
-      0
-    } else {
-      // return depth of the first element on the list
-      paths.head.depth
-    }
-
-  }
-
   def findShortestPath(
       start: ArticleLink,
       end: ArticleLink
@@ -144,7 +69,7 @@ object WikipediaScraper {
             case Some(list) => list.length
             case None => 0
           }
-          if (path.length > findShortest(result.toList.flatten) && length > 0) {
+          if (path.length > findShortestResult(result.toList.flatten) && length > 0) {
             println(s"==================Pruned==================")
             // Return result withuot duplicates
             val resultWithoutDuplicates = result match {
@@ -215,6 +140,81 @@ object WikipediaScraper {
       System.currentTimeMillis(),
       Some(List.empty)
     )
+  }
+
+    def checkIfLinkExists(link: ArticleLink): Boolean = {
+    val urlWiki = s"https://${link.language}.wikipedia.org/wiki/${link.title}"
+    val backend = HttpURLConnectionBackend()
+    val request = basicRequest.get(Uri.unsafeParse(urlWiki))
+    val response = request.send(backend)
+    response.code == StatusCode.Ok
+  }
+
+  def encodeAlphanumericOnly(str: String): String = {
+    val alphanumericPattern = "[\\p{Alnum}\\p{L}]+".r
+
+    val encodedParts = alphanumericPattern.replaceAllIn(str, { m =>
+      URLEncoder.encode(m.group(0), "UTF-8")
+    })
+
+    encodedParts
+  } 
+
+  def readFile(filename: String): Option[List[List[ArticleLink]]] = {
+    val bufferedSource: Try[Source] = Try(Source.fromFile(filename))
+    bufferedSource match {
+      case Success(source) =>
+        // TODO: Check if file is empty and TRANSLATE TO UTF8 ALL POLISH CHARACTERS
+        if (source.isEmpty) {
+          return None
+        }
+        val lines = (for (line <- source.getLines()) yield line).toList
+        val validLine: Regex = """\(([a-z]+), ([\p{L}0-9%_()]+), ([\p{L}0-9%_()]+)\)\n?""".r
+        val searchQueries: List[List[ArticleLink]] = lines.flatMap {
+          case validLine(lang, srcName, destName) =>
+            // check if all links exist
+            if (!checkIfLinkExists(ArticleLink(lang, srcName)) || !checkIfLinkExists(ArticleLink(lang, destName))) {
+              println(s"Invalid tuple: $lang, $srcName, $destName. One of the links does not exist.")
+              return None
+            }
+            Some(List(ArticleLink(lang, encodeAlphanumericOnly(srcName)), ArticleLink(lang, encodeAlphanumericOnly(destName))))
+          case _ =>
+            source.close()
+            return None
+        }
+
+        source.close()
+        Some(searchQueries)
+      case Failure(exception) =>
+        println(s"Error opening file: ${exception.getMessage}")
+        None
+    }
+  }
+
+  def writeIntoFile(filePath: String, output: List[List[ArticlePath]]): Unit = {
+    val outputFile = new File(filePath)
+    val pw = new PrintWriter(outputFile)
+    output.foreach { result =>
+      val sortedPaths = result.sortBy(_.path.map(_.decodedTitle).mkString(", "))
+      val line = sortedPaths.map { path =>
+        val strippedLinks = path.path.reverse.map(_.decodedTitle)
+        strippedLinks.mkString(", ")
+      }.mkString("), (")
+
+      pw.write(s"($line)\n")
+    }
+    pw.flush()
+    pw.close()
+  }
+
+  def findShortestResult(paths: List[ArticlePath]): Int = {
+    if (paths.isEmpty) {
+      0
+    } else {
+      // return depth of the first element on the list
+      paths.head.depth
+    }
+
   }
 
 }
