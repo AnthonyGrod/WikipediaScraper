@@ -59,14 +59,11 @@ object WikipediaScraper {
       queue.dequeueOption match {
         case Some((path, remainingQueue)) =>
           val current = path.head
-          println(s"currentLength: ${path.length}")
-          println(s"path: $path")
           val length: Int = result match {
             case Some(list) => list.length
             case None => 0
           }
           if (path.length > result.toList.flatten.headOption.map(_.depth).getOrElse(0) && length > 0) {
-            println(s"==================Pruned==================")
             // Return result withuot duplicates
             val resultWithoutDuplicates = result match {
               case Some(list) => Some(list.distinct)
@@ -76,8 +73,6 @@ object WikipediaScraper {
           }
 
           if (current == end) {
-            println(s"==================Found==================")
-            println(s"path: ${path}")
             // Append to result
             val updatedResult = result match {
               case Some(paths) => Some(List(ArticlePath(path, path.length)) ++ paths)
@@ -110,9 +105,6 @@ object WikipediaScraper {
                 val currentTime = System.currentTimeMillis()
                 val elapsedMillis = currentTime - lastRequestTime
                 val delayMillis = 1000 / 200 // 200 requests per second
-                if (elapsedMillis < delayMillis && requestsCount >= 200) {
-                  println("==============Sleeping================")
-                }
                 val updatedRequestsCount =
                   if (elapsedMillis < delayMillis && requestsCount >= 200) {
                     Thread.sleep(delayMillis - elapsedMillis)
