@@ -69,7 +69,7 @@ object WikipediaScraper {
             case Some(list) => list.length
             case None => 0
           }
-          if (path.length > findShortestResult(result.toList.flatten) && length > 0) {
+          if (path.length > result.toList.flatten.headOption.map(_.depth).getOrElse(0) && length > 0) {
             println(s"==================Pruned==================")
             // Return result withuot duplicates
             val resultWithoutDuplicates = result match {
@@ -144,10 +144,20 @@ object WikipediaScraper {
 
   def checkIfLinkExists(link: ArticleLink): Boolean = {
     val urlWiki = s"https://${link.language}.wikipedia.org/wiki/${link.title}"
-    val backend = HttpURLConnectionBackend()
     val request = basicRequest.get(Uri.unsafeParse(urlWiki))
-    val response = request.send(backend)
-    response.code == StatusCode.Ok
+
+    val response: Try[Response[Either[String, String]]] = Try {
+      request.send(HttpURLConnectionBackend())
+    }
+
+    response match {
+      case Success(res) =>
+        res.code == StatusCode.Ok
+
+      case Failure(ex) =>
+        println(s"Error occurred while checking link: ${ex.getMessage}")
+        false
+    }
   }
 
   def encodeAlphanumericOnly(str: String): String = {
@@ -195,26 +205,14 @@ object WikipediaScraper {
     val outputFile = new File(filePath)
     val pw = new PrintWriter(outputFile)
     output.foreach { result =>
-      val sortedPaths = result.sortBy(_.path.map(_.decodedTitle).mkString(", "))
-      val line = sortedPaths.map { path =>
+      val line = result.sortBy(_.path.map(_.decodedTitle).mkString(", ")).map { path =>
         val strippedLinks = path.path.reverse.map(_.decodedTitle)
         strippedLinks.mkString(", ")
       }.mkString("), (")
 
       pw.write(s"($line)\n")
     }
-    pw.flush()
     pw.close()
   }
-
-  def findShortestResult(paths: List[ArticlePath]): Int = {
-    if (paths.isEmpty) {
-      0
-    } else {
-      // return depth of the first element on the list
-      paths.head.depth
-    }
-
-  }
-
+  
 }
