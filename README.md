@@ -1,6 +1,7 @@
 # Wikipedia Scraper
 
 ### Disclaimer
+
 During developement of this program on my machine locally I noticed the most time consuming operation is by far fetching HTML data (each fetch was minimum 50ms, even with almost-empty sites). After trying to solve this problem with introducing concurrent HTML fetching I noticed that on GiHub Codespace HTML fetch time is on avarage even 10x lower, being close to the rate limit of Wikipedia. I am assuming then that the problem was caused by my local machine configuration but if you face it too, I recommend using something like GitHub Codespace in order to boost efficiency.
 
 TL;DR If on your local machine automatic tests run longer than 10s, I recommend running the program on something like GitHub Codespace.
@@ -34,8 +35,8 @@ In order for this project to work you need to have:
 
 ### Launch
 
-1. In the directory with ```build.sbt``` file run ```sbt``` command in your terminal.
-2. Once ```sbt``` is up and running, inside ```sbt``` run ```compile```. This will automatically create necessary dependencies, compile files and link them.
+1. In the directory with ``build.sbt`` file run ``sbt -mem 2048`` command in your terminal. (flag -mem sets heap size to twich as much as is set by default in order to allow the program to execute  a complex tail recursion, which puts a heavy load on the heap)
+2. Once ``sbt`` is up and running, inside ``sbt`` run ``compile``. This will automatically create necessary dependencies, compile files and link them.
 3. Now you just have to run the project. For details, please look below.
 
 ### Run
@@ -47,18 +48,18 @@ the app inside sbt with command
 run <absoluteInputPath> <absoluteOutputPath>
 ```
 
-```absoluteInputPath``` is an absolute path to your input txt file
+``absoluteInputPath`` is an absolute path to your input txt file
 with sites between which you'd like to know shortest paths. For detailed information
 regarding the type of input, please look below.
 
-```absoluteOutputPath``` is an absolute path to the txt file where you want to store
+``absoluteOutputPath`` is an absolute path to the txt file where you want to store
 the output. The path must be valid but the txt file itself does not have to exist.
-In that case, the program creates specified ```.txt``` file and places the output
+In that case, the program creates specified ``.txt`` file and places the output
 right there. If file already exists, the program just overrides file's content.
 
 ### Input
 
-The program requires a ```.txt``` file as its input. Each line of this file must be of type
+The program requires a ``.txt`` file as its input. Each line of this file must be of type
 
 ```
 (langCode, srcName, destName)
@@ -66,21 +67,21 @@ The program requires a ```.txt``` file as its input. Each line of this file must
 
 and ended by a newline character.
 
-- ```langCode``` - valid language Wikipedia code (https://en.wikipedia.org/wiki/List_of_ISO_639-1_codes, 639-1 column).
-  For example for english it would be ```en``` or for polish ```pl```.
-- ```srcName``` - valid Wikipedia article title from which you would like to start the search.. You can look it up in the url of your chosen
-  Wikipedia article. For example for an article available at https://pl.wikipedia.org/wiki/Skala_betów the ```srcName```
-  would be ```Skala_betów```.
-- ```destName``` - valid Wikipedia article title to which you would like to get all shortest paths from ```srcName``` article.
+- ``langCode`` - valid language Wikipedia code (https://en.wikipedia.org/wiki/List_of_ISO_639-1_codes, 639-1 column).
+  For example for english it would be ``en`` or for polish ``pl``.
+- ``srcName`` - valid Wikipedia article title from which you would like to start the search.. You can look it up in the url of your chosen
+  Wikipedia article. For example for an article available at https://pl.wikipedia.org/wiki/Skala_betów the ``srcName``
+  would be ``Skala_betów``.
+- ``destName`` - valid Wikipedia article title to which you would like to get all shortest paths from ``srcName`` article.
 
 In case of an incorrect input an appropriate message will be shown.
 
 ### Output
 
-As an output the program created or overrides ```.txt``` file at location provided by
-```absoluteOutputPath``` argument in ```run``` command. In this file the program will
+As an output the program created or overrides ``.txt`` file at location provided by
+``absoluteOutputPath`` argument in ``run`` command. In this file the program will
 put all shortest paths for each line of input sorted alphabetically into output file.
 
 ### Testing
 
-Automatic tests can be run in ```sbt``` using ```test``` command
+Automatic tests can be run in ``sbt`` using ``test`` command
