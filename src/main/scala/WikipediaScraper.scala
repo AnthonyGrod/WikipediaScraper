@@ -78,7 +78,7 @@ object WikipediaScraper {
               case Some(paths) => Some(List(ArticlePath(path, path.length)) ++ paths)
               case None        => Some(List(ArticlePath(path, path.length)))
             }
-            findShortestPathRec(remainingQueue, visited, requestsCount, lastRequestTime, updatedResult)
+            findShortestPathRec(remainingQueue, visited + current, requestsCount, lastRequestTime, updatedResult)
           } else if (visited.contains(current)) {
             findShortestPathRec(remainingQueue, visited, requestsCount, lastRequestTime, result)
           } else {
