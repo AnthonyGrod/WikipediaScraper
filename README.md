@@ -1,7 +1,7 @@
 # Wikipedia Scraper
 
 ### Disclaimer
-During developement of this program on my machine locally I noticed the most time consuming operation is by far fetching HTML data (each fetch was minimum 50ms, even with almost-empty sites). After trying to solve this problem with introducing concurrent HTML fetching I noticed that on GiHub Codespace HTML fetch time is sometimes even 10x lower, being close to the rate limit of Wikipedia. I am assuming then that the problem was caused by my local machine configuration but if you face it too, I recommend using something like GitHub Codespace in order to boost efficiency.
+During developement of this program on my machine locally I noticed the most time consuming operation is by far fetching HTML data (each fetch was minimum 50ms, even with almost-empty sites). After trying to solve this problem with introducing concurrent HTML fetching I noticed that on GiHub Codespace HTML fetch time is on avarage even 10x lower, being close to the rate limit of Wikipedia. I am assuming then that the problem was caused by my local machine configuration but if you face it too, I recommend using something like GitHub Codespace in order to boost efficiency.
 
 TL;DR If on your local machine automatic tests run longer than 10s, I recommend running the program on something like GitHub Codespace.
 
