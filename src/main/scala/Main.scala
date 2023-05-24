@@ -46,11 +46,12 @@ object WikipediaScraper {
         val outputFile = new File(args(1))
         val pw = new PrintWriter(outputFile)
         searchResults.foreach { result =>
-          val reversedPaths = result.map { path =>
+          val sortedPaths = result.sortBy(_.path.map(_.decodedTitle).mkString(", "))
+          val line = sortedPaths.map { path =>
             val strippedLinks = path.path.reverse.map(_.decodedTitle)
             strippedLinks.mkString(", ")
-          }
-          val line = reversedPaths.mkString("), (")
+          }.mkString("), (")
+
           pw.write(s"($line)\n")
         }
         pw.flush()
