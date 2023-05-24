@@ -4,14 +4,9 @@ import scala.concurrent.duration._
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.util.{Try, Success, Failure}
 import scala.util.matching.Regex
-import scala.io.Source
 import scala.collection.immutable.Queue
 
-import sttp.client3._
-import sttp.model.{Uri, StatusCode}
-
-import java.io.{PrintWriter, File}
-import java.net.{URLDecoder, URLEncoder}
+import java.net.{URLDecoder}
 
 case class ArticleLink(language: String, title: String) {
   override def toString: String = s"https://$language.wikipedia.org/wiki/${URLDecoder.decode(title, "UTF-8")}"
@@ -23,9 +18,10 @@ case class ArticlePath(path: List[ArticleLink], depth: Int)
 object WikipediaScraper {
 
   def main(args: Array[String]): Unit = {
+    val handler = new IOHandler()
     args.length match {
       case 2 =>
-        val searchQueries = readFile(args(0))
+        val searchQueries = handler.readFile(args(0))
         if (searchQueries.isEmpty) {
           println("Invalid file content. File must contain non empty rows of tuples of the form (language, articleNameStart, articleNameEnd). Each ending with new line.")
           return
@@ -39,7 +35,7 @@ object WikipediaScraper {
             }
           case _ => List.empty // Should never happen since we check it but we just do not want to get warnings(;
         }
-        writeIntoFile(args(1), searchResults)
+        handler.writeIntoFile(args(1), searchResults)
       case _ =>
         println("Usage: run <absolutePathToInputFile> <absolutePathToOutputFile>")
     }
@@ -142,77 +138,4 @@ object WikipediaScraper {
     )
   }
 
-  def checkIfLinkExists(link: ArticleLink): Boolean = {
-    val urlWiki = s"https://${link.language}.wikipedia.org/wiki/${link.title}"
-    val request = basicRequest.get(Uri.unsafeParse(urlWiki))
-
-    val response: Try[Response[Either[String, String]]] = Try {
-      request.send(HttpURLConnectionBackend())
-    }
-
-    response match {
-      case Success(res) =>
-        res.code == StatusCode.Ok
-
-      case Failure(ex) =>
-        println(s"Error occurred while checking link: ${ex.getMessage}")
-        false
-    }
-  }
-
-  def encodeAlphanumericOnly(str: String): String = {
-    val alphanumericPattern = "[\\p{Alnum}\\p{L}]+".r
-
-    val encodedParts = alphanumericPattern.replaceAllIn(str, { m =>
-      URLEncoder.encode(m.group(0), "UTF-8")
-    })
-
-    encodedParts
-  } 
-
-  def readFile(filename: String): Option[List[List[ArticleLink]]] = {
-    val bufferedSource: Try[Source] = Try(Source.fromFile(filename))
-    bufferedSource match {
-      case Success(source) =>
-        // TODO: Check if file is empty and TRANSLATE TO UTF8 ALL POLISH CHARACTERS
-        if (source.isEmpty) {
-          return None
-        }
-        val lines = (for (line <- source.getLines()) yield line).toList
-        val validLine: Regex = """\(([a-z]+), ([\p{L}0-9%_()]+), ([\p{L}0-9%_()]+)\)\n?""".r
-        val searchQueries: List[List[ArticleLink]] = lines.flatMap {
-          case validLine(lang, srcName, destName) =>
-            // check if all links exist
-            if (!checkIfLinkExists(ArticleLink(lang, srcName)) || !checkIfLinkExists(ArticleLink(lang, destName))) {
-              println(s"Invalid tuple: $lang, $srcName, $destName. One of the links does not exist.")
-              return None
-            }
-            Some(List(ArticleLink(lang, encodeAlphanumericOnly(srcName)), ArticleLink(lang, encodeAlphanumericOnly(destName))))
-          case _ =>
-            source.close()
-            return None
-        }
-
-        source.close()
-        Some(searchQueries)
-      case Failure(exception) =>
-        println(s"Error opening file: ${exception.getMessage}")
-        None
-    }
-  }
-
-  def writeIntoFile(filePath: String, output: List[List[ArticlePath]]): Unit = {
-    val outputFile = new File(filePath)
-    val pw = new PrintWriter(outputFile)
-    output.foreach { result =>
-      val line = result.sortBy(_.path.map(_.decodedTitle).mkString(", ")).map { path =>
-        val strippedLinks = path.path.reverse.map(_.decodedTitle)
-        strippedLinks.mkString(", ")
-      }.mkString("), (")
-
-      pw.write(s"($line)\n")
-    }
-    pw.close()
-  }
-  
 }

@@ -1,4 +1,5 @@
 import scala.util.matching.Regex
+import scala.util.{Try, Success, Failure}
 import scala.jdk.CollectionConverters._
 
 import sttp.client3._
@@ -29,4 +30,23 @@ class JsoupScraper {
       }
       .toList
   }
+
+	def checkIfLinkExists(link: ArticleLink): Boolean = {
+    val urlWiki = s"https://${link.language}.wikipedia.org/wiki/${link.title}"
+    val request = basicRequest.get(Uri.unsafeParse(urlWiki))
+
+    val response: Try[Response[Either[String, String]]] = Try {
+      request.send(HttpURLConnectionBackend())
+    }
+
+    response match {
+      case Success(res) =>
+        res.code == StatusCode.Ok
+
+      case Failure(ex) =>
+        println(s"Error occurred while checking link: ${ex.getMessage}")
+        false
+    }
+  }
+
 }
