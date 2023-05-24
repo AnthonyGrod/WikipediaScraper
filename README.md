@@ -20,12 +20,6 @@ and a list of results (paths found) are passed. For a given article link taken f
 
 The search begins with only starting article on the queue.
 
-### About running
-
-During developement of this program on my machine locally I noticed the most time consuming operation is by far fetching HTML data (each fetch was minimum 50ms, even with almost-empty sites). After trying to solve this problem with introducing concurrent HTML fetching I noticed that on GiHub Codespace HTML fetch time is on avarage even 10x lower, being close to the rate limit of Wikipedia. I am assuming then that the problem was caused by my local machine configuration but if you face it too, I recommend using something like GitHub Codespace in order to boost efficiency.
-
-TL;DR If on your local machine automatic tests run longer than 10s, I recommend running the program on something like GitHub Codespace.
-
 ### Requirements
 
 In order for this project to work you need to have:
@@ -38,6 +32,12 @@ In order for this project to work you need to have:
 1. In the directory with ``build.sbt`` file run ``sbt -mem 2048`` command in your terminal. (flag -mem sets heap size to twich as much as is set by default in order to allow the program to execute  a complex tail recursion, which puts a heavy load on the heap)
 2. Once ``sbt`` is up and running, inside ``sbt`` run ``compile``. This will automatically create necessary dependencies, compile files and link them.
 3. Now you just have to run the project. For details, please look below.
+
+### Side note
+
+During developement of this program on my machine locally I noticed the most time consuming operation is by far fetching HTML data (each fetch was minimum 50ms, even with almost-empty sites). After trying to solve this problem with introducing concurrent HTML fetching I noticed that on GiHub Codespace HTML fetch time is on avarage even 10x lower, being close to the rate limit of Wikipedia. I am assuming then that the problem was caused by my local machine configuration but if you face it too, I recommend using something like GitHub Codespace in order to boost efficiency.
+
+TL;DR If on your local machine automatic tests run longer than 10s, I recommend running the program on something like GitHub Codespace.
 
 ### Run
 
