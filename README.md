@@ -38,7 +38,9 @@ In order for this project to work you need to have:
 Once you have compiled the project and downloaded necessary requirements, you can run
 the app inside sbt with command
 
-```run <absoluteInputPath> <absoluteOutputPath>```
+```
+run <absoluteInputPath> <absoluteOutputPath>
+```
 
 ```absoluteInputPath``` is an absolute path to your input txt file
 with sites between which you'd like to know shortest paths. For detailed information
@@ -53,7 +55,9 @@ right there. If file already exists, the program just overrides file's content.
 
 The program requires a ```.txt``` file as its input. Each line of this file must be of type
 
-```(langCode, srcName, destName)```
+```
+(langCode, srcName, destName)
+```
 
 and ended by a newline character.
 
