@@ -21,7 +21,6 @@ class IOHandler {
     val bufferedSource: Try[Source] = Try(Source.fromFile(filename))
     bufferedSource match {
       case Success(source) =>
-        // TODO: Check if file is empty and TRANSLATE TO UTF8 ALL POLISH CHARACTERS
         if (source.isEmpty) {
           return None
         }
