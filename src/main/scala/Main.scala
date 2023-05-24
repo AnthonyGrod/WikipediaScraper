@@ -18,6 +18,7 @@ import java.io.IOException
 
 case class ArticleLink(language: String, title: String) {
   override def toString: String = s"https://$language.wikipedia.org/wiki/${URLDecoder.decode(title, "UTF-8")}"
+  def decodedTitle: String = URLDecoder.decode(title, "UTF-8")
 }
 
 case class ArticlePath(path: List[ArticleLink], depth: Int)
@@ -45,7 +46,10 @@ object WikipediaScraper {
         val outputFile = new File(args(1))
         val pw = new PrintWriter(outputFile)
         searchResults.foreach { result =>
-          val reversedPaths = result.map(path => path.path.reverse.map(_.toString.stripPrefix("https://pl.wikipedia.org/wiki/")).mkString(", "))
+          val reversedPaths = result.map { path =>
+            val strippedLinks = path.path.reverse.map(_.decodedTitle)
+            strippedLinks.mkString(", ")
+          }
           val line = reversedPaths.mkString("), (")
           pw.write(s"($line)\n")
         }
